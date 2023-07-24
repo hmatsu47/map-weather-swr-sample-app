@@ -1,0 +1,38 @@
+.App {
+  text-align: center;
+  height: 98vh;
+}
+
+.leaflet-container {
+  width: 99.5vw;
+  height: 94vh;
+}
+.cross {
+  /* 十字アイコン */
+  color: darkslategray;
+  background: transparent;
+  width: 36px;
+  height: 36px;
+}
+.cross::before {
+  content: "";
+  position: absolute;
+  top: -13px;
+  left: 3px;
+  width: 2px;
+  height: 7px;
+  border-top: 13px solid darkslategray;
+  border-bottom: 13px solid darkslategray;
+  border-radius: 2px;
+}
+.cross::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: -13px;
+  width: 7px;
+  height: 2px;
+  border-left: 13px solid darkslategray;
+  border-right: 13px solid darkslategray;
+  border-radius: 2px;
+}
