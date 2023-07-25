@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { useDidMount } from "rooks";
+import useSWR from "swr";
 import { LatLng, Map } from "leaflet";
-import { fetchAddress } from "../api/fetchAddress";
-import { fetchWeatherData } from "../api/fetchWeatherData";
-import { readMuniJs } from "../api/readMuniJs";
+import { fetchAddress, fetchAddressUrl } from "../api/fetchAddress";
+import { fetchWeatherData, fetchWeatherDataUrl } from "../api/fetchWeatherData";
+import { readMuniJs, readMuniJsUrl } from "../api/readMuniJs";
 import { getWeatherIcon, getWeatherItem, getWindDirectionName } from "../utils/weatherUtil";
-import { Dictionary } from "../type";
+import { Address, Dictionary, Weather } from "../type";
 
 type Props = {
   map: Map;
@@ -16,11 +16,22 @@ export function DisplayWeather(props: Props) {
   // 地図の中心座標（緯度・軽度）
   const [position, setPosition] = useState(() => map.getCenter());
   // 市区町村コード→市区町村（名）変換辞書（国土交通省のmuni.jsを連想配列化）
-  const [muniDict, setMuniDict] = useState<Dictionary | null>(null);
+  const { data: muniDict } = useSWR<Dictionary>(readMuniJsUrl, readMuniJs, {
+    revalidateIfStale: false,
+    loadingTimeout: 10000,
+  });
   // 現在地の住所
+  const { data: address } = useSWR<Address>(fetchAddressUrl(position), fetchAddress, {
+    loadingTimeout: 10000,
+  });
   const [addressMuniCode, setAddressMuniCode] = useState<string | null>(null);
   const [addressDetail, setAddressDetail] = useState<string | null>(null);
   // 現在天気の表示項目
+  const { data: weather } = useSWR<Weather | null>(
+    fetchWeatherDataUrl(position),
+    fetchWeatherData,
+    { loadingTimeout: 10000 }
+  );
   const [weatherCode, setWeatherCode] = useState<number | null>(null);
   const [temperature, setTemperature] = useState<number | null>(null);
   const [windSpeed, setWindSpeed] = useState<number | null>(null);
@@ -39,26 +50,19 @@ export function DisplayWeather(props: Props) {
   }, [map, onMoveEnd]);
   // 地図の中心座標が変更されたらその場所の住所を国土地理院のAPIで取得し、現在の天気をOpen-MeteoのAPIで取得
   useEffect(() => {
-    const addressLoad = async () => {
-      const address = await fetchAddress(position);
+    if (address) {
       setAddressMuniCode(address.muniCd);
       setAddressDetail(address.lv01Nm);
-    };
-    addressLoad();
-    const weatherLoad = async () => {
-      const weather = await fetchWeatherData(position);
+    }
+  }, [address]);
+  useEffect(() => {
+    if (weather) {
       setWeatherCode(getWeatherItem(weather, weather?.weathercode));
       setTemperature(getWeatherItem(weather, weather?.temperature));
       setWindSpeed(getWeatherItem(weather, weather?.windspeed));
       setWindDirection(getWeatherItem(weather, weather?.winddirection));
-    };
-    weatherLoad();
-  }, [position]);
-  // 地図ロード時に市区町村コードファイルを取得
-  useDidMount(async () => {
-    const muni = await readMuniJs();
-    setMuniDict(muni);
-  });
+    }
+  }, [weather]);
   // ブラウザから取得した現在位置に地図の中心を移動
   function moveToCurrentPosition() {
     if (!("geolocation" in navigator) || !map) {

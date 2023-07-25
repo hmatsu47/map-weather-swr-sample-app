@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { preload } from "swr";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import { Marker as LeafletMarker, DivIcon, LatLng, Map } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { DisplayWeather } from "./DisplayWeather";
+import { fetchAddress, fetchAddressUrl } from "../api/fetchAddress";
+import { fetchWeatherData, fetchWeatherDataUrl } from "../api/fetchWeatherData";
+import { readMuniJs, readMuniJsUrl } from "../api/readMuniJs";
 import "./Map.css";
 
 export function MainMap() {
@@ -13,6 +17,10 @@ export function MainMap() {
   // 地図の中心（十字マーク）
   const [mark, setMark] = useState<LeafletMarker<DivIcon> | null>(null);
   const cross = new DivIcon({ className: "cross", bgPos: [18, 18] });
+  // API先読み
+  preload(readMuniJsUrl, readMuniJs);
+  preload(fetchAddressUrl(position), fetchAddress);
+  preload(fetchWeatherDataUrl(position), fetchWeatherData);
   // 生成した地図のrefからsetMapできるように（生成した地図はメモ化）
   const displayMap = useMemo(
     () => (
