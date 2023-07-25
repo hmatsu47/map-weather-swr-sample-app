@@ -48,13 +48,14 @@ export function DisplayWeather(props: Props) {
       map.off("moveend", onMoveEnd);
     };
   }, [map, onMoveEnd]);
-  // 地図の中心座標が変更されたらその場所の住所を国土地理院のAPIで取得し、現在の天気をOpen-MeteoのAPIで取得
+  // 国土地理院のAPIからSWRで取得した住所が変わったらステートに反映
   useEffect(() => {
     if (address) {
       setAddressMuniCode(address.muniCd);
       setAddressDetail(address.lv01Nm);
     }
   }, [address]);
+  // Open-MeteoのAPIからSWRで取得した気象情報が変わったらステートに反映
   useEffect(() => {
     if (weather) {
       setWeatherCode(getWeatherItem(weather, weather?.weathercode));
