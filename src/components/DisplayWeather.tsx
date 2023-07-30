@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import useSWR from "swr";
 import { LatLng, Map } from "leaflet";
-import { fetchAddress, fetchAddressUrl } from "../api/fetchAddress";
-import { fetchWeatherData, fetchWeatherDataUrl } from "../api/fetchWeatherData";
-import { readMuniJs, readMuniJsUrl } from "../api/readMuniJs";
+import { useMuniJs } from "../api/handleMuniJs";
+import { useAddress } from "../api/handleAddress";
+import { useWeatherData } from "../api/handleWeatherData";
 import { getWeatherIcon, getWeatherItem, getWindDirectionName } from "../utils/weatherUtil";
-import { Address, Dictionary, Weather } from "../type";
 
 type Props = {
   map: Map;
@@ -16,22 +14,13 @@ export function DisplayWeather(props: Props) {
   // 地図の中心座標（緯度・軽度）
   const [position, setPosition] = useState(() => map.getCenter());
   // 市区町村コード→市区町村（名）変換辞書（国土交通省のmuni.jsを連想配列化）
-  const { data: muniDict } = useSWR<Dictionary>(readMuniJsUrl, readMuniJs, {
-    revalidateIfStale: false,
-    loadingTimeout: 10000,
-  });
+  const muniDict = useMuniJs();
   // 現在地の住所
-  const { data: address } = useSWR<Address>(fetchAddressUrl(position), fetchAddress, {
-    loadingTimeout: 10000,
-  });
+  const address = useAddress(position);
   const [addressMuniCode, setAddressMuniCode] = useState<string | null>(null);
   const [addressDetail, setAddressDetail] = useState<string | null>(null);
   // 現在天気の表示項目
-  const { data: weather } = useSWR<Weather | null>(
-    fetchWeatherDataUrl(position),
-    fetchWeatherData,
-    { loadingTimeout: 10000 }
-  );
+  const weather = useWeatherData(position);
   const [weatherCode, setWeatherCode] = useState<number | null>(null);
   const [temperature, setTemperature] = useState<number | null>(null);
   const [windSpeed, setWindSpeed] = useState<number | null>(null);
